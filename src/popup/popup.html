@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PenawarPlus</title>
+  <link rel="stylesheet" href="../ui.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>PenawarPlus</h1>
+    <span id="version" class="muted"></span>
+  </header>
+
+  <section>
+    <div id="host" class="host"></div>
+    <label class="toggle">
+      <input type="checkbox" id="enabled">
+      <span>Aktif pada site ini</span>
+    </label>
+    <p id="reload-hint" class="muted small" hidden>Refresh page untuk melihat perubahan.</p>
+  </section>
+
+  <section>
+    <h2>Kemas kini</h2>
+    <p id="status"></p>
+    <div class="row">
+      <button id="check">Semak kemas kini</button>
+      <button id="apply" class="primary" hidden>Kemas kini sekarang</button>
+    </div>
+    <div class="row spaced">
+      <button id="rules">Kemas kini rule</button>
+    </div>
+    <p id="message" class="small" role="status"></p>
+  </section>
+
+  <footer>
+    <a href="#" id="open-options">Tetapan</a>
+    <span id="rules-version" class="muted small"></span>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

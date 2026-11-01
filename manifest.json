@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "PenawarPlus",
+  "version": "0.2.0",
+  "description": "Penawar kepada anti-adblock: bypass pengesanan adblock dan buang dinding amaran. Berfungsi bersama adblocker sedia ada.",
+  "minimum_chrome_version": "111",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAimxt8zLxg1biSBt7P6ARwrl5+s5alyF2U3njcmHTPMrhEjAD2Jg/PF0EnjPhjV4pSe5yVY53wdOmgYJkfq4/QcwXjPpSmD7KukZaQFUkBOyqCD0gT2eN4BkPRhPnqEZ5Essny/I9VdmEVVeSP6XWuUOUxpUXWOVE/bgcLHFCuevBw/8iaKVmMclSHvk4BLDOlSexXAsaPbVzC4mu3+4cxzNzvcrQijItsm7qNvCCwvUtGHc16pWnU2JgVUu+sCAjyUw31rmmQ/z76QvYzXyejqrngSx4fLXHBzP/uMOA5slZfI4W9JoAYMX6MS2Dmp9Ch+VDJjJL9rCmFHcUQmEpjQIDAQAB",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "webNavigation",
+    "alarms",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "PenawarPlus"
+  },
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "src/content/overlay-remover.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

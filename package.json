@@ -1,0 +1,13 @@
+{
+  "name": "penawarplus",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "PenawarPlus - browser extension (Chrome/Brave, MV3)",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "icons": "node tools/make-icons.js",
+    "install-host": "node native-host/install.js",
+    "uninstall-host": "node native-host/uninstall.js"
+  }
+}
