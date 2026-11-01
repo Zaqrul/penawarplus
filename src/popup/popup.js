@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const send = (message) => chrome.runtime.sendMessage(message);
 
-const when = (ts) => (ts ? new Date(ts).toLocaleString('ms-MY') : '—');
+const when = (ts) => (ts ? new Date(ts).toLocaleString() : '—');
 
 let host = '';
 
@@ -15,21 +15,21 @@ function say(text, kind = '') {
 function describeError(res) {
   switch (res && res.error) {
     case 'host-unavailable':
-      return 'Helper git belum dipasang. Jalankan sekali dalam folder extension:\nnode native-host/install.js\nkemudian reload extension.';
+      return 'The git helper is not installed. Run this once in the extension folder:\nnode native-host/install.js\nthen reload the extension.';
     case 'not-a-git-repo':
-      return 'Folder extension bukan repo git. Clone repo dengan git, kemudian "Load unpacked" folder itu.';
+      return 'The extension folder is not a git repository. Clone the repo with git, then "Load unpacked" that folder.';
     case 'no-remote':
-      return 'Repo git tiada remote "origin".';
+      return 'The git repository has no "origin" remote.';
     case 'detached-head':
-      return 'Repo berada dalam detached HEAD. Checkout satu branch dahulu.';
+      return 'The repository is in a detached HEAD state. Check out a branch first.';
     case 'git-failed':
-      return 'git pull gagal:\n' + (res.output || '(tiada output)') + '\n(Ada perubahan tempatan yang bercanggah?)';
+      return 'git failed:\n' + (res.output || '(no output)') + '\n(Local changes in the way?)';
     case 'no-repo':
-      return 'Helper git belum dipasang dan repo belum ditetapkan.\nPasang helper (node native-host/install.js) untuk repo private atau awam, atau isi owner/nama repo awam dalam Tetapan.';
+      return 'The git helper is not installed and no repository is set.\nInstall the helper (node native-host/install.js) for private or public repos, or enter a public owner/name in Settings.';
     case 'timeout':
-      return 'Helper tidak membalas (timeout).';
+      return 'The helper did not respond (timeout).';
     default:
-      return String((res && (res.error || res.detail)) || 'Ralat tidak diketahui');
+      return String((res && (res.error || res.detail)) || 'Unknown error');
   }
 }
 
@@ -40,17 +40,17 @@ function renderStatus(state) {
   $('apply').hidden = true;
 
   if (!u) {
-    el.textContent = `Versi ${state.version}. Belum disemak.`;
+    el.textContent = `Version ${state.version}. Not checked yet.`;
     el.classList.add('muted');
   } else if (u.error) {
-    el.textContent = u.error === 'no-repo' ? describeError({ error: 'no-repo' }) : `Gagal menyemak: ${u.error}`;
+    el.textContent = u.error === 'no-repo' ? describeError({ error: 'no-repo' }) : `Check failed: ${u.error}`;
     el.classList.add(u.error === 'no-repo' ? 'muted' : 'bad');
   } else if (u.available) {
-    el.textContent = `Versi ${u.remoteVersion} tersedia (anda ${state.version}).`;
+    el.textContent = `Version ${u.remoteVersion} is available (you have ${state.version}).`;
     el.classList.add('warn');
     $('apply').hidden = false;
   } else {
-    el.textContent = `Terkini (v${state.version}). Disemak ${when(u.checkedAt)}.`;
+    el.textContent = `Up to date (v${state.version}). Checked ${when(u.checkedAt)}.`;
     el.classList.add('muted');
   }
 }
@@ -58,11 +58,11 @@ function renderStatus(state) {
 async function load() {
   const state = await send({ type: 'popup-state', host });
   $('version').textContent = 'v' + state.version;
-  $('rules-version').textContent = 'Rule ' + state.rulesVersion;
+  $('rules-version').textContent = 'Rules ' + state.rulesVersion;
   $('enabled').checked = state.enabled;
   renderStatus(state);
   if (state.lastUpdate && state.lastUpdate.changed) {
-    say(`Dikemas kini ${when(state.lastUpdate.at)} (dari v${state.lastUpdate.from}).`);
+    say(`Updated ${when(state.lastUpdate.at)} (from v${state.lastUpdate.from}).`);
   }
 }
 
@@ -73,7 +73,7 @@ async function init() {
     if (/^https?:$/.test(url.protocol)) host = url.hostname;
   } catch (_) { /* chrome:// pages etc. */ }
 
-  $('host').textContent = host || '(page ini tidak disokong)';
+  $('host').textContent = host || '(this page is not supported)';
   $('enabled').disabled = !host;
 
   $('enabled').addEventListener('change', async (e) => {
@@ -83,7 +83,7 @@ async function init() {
 
   $('check').addEventListener('click', async () => {
     $('check').disabled = true;
-    say('Menyemak…');
+    say('Checking…');
     await send({ type: 'check-update' });
     await load();
     say('');
@@ -92,25 +92,25 @@ async function init() {
 
   $('rules').addEventListener('click', async () => {
     $('rules').disabled = true;
-    say('Menarik rule…');
+    say('Fetching rules…');
     const res = await send({ type: 'update-rules' });
     if (!res.ok) say(describeError(res), 'bad');
-    else say(res.updated ? `Rule dikemas kini ke ${res.version}.` : `Rule sudah terkini (${res.version}).`);
+    else say(res.updated ? `Rules updated to ${res.version}.` : `Rules are already up to date (${res.version}).`);
     await load();
     $('rules').disabled = false;
   });
 
   $('apply').addEventListener('click', async () => {
     $('apply').disabled = true;
-    say('Menjalankan git pull…');
+    say('Running git pull…');
     const res = await send({ type: 'apply-update' });
     if (!res.ok) {
       say(describeError(res), 'bad');
       $('apply').disabled = false;
     } else if (res.changed) {
-      say('Berjaya. Extension akan reload sebentar lagi.');
+      say('Done. The extension will reload in a moment.');
     } else {
-      say('Tiada perubahan untuk ditarik. Pastikan versi dalam manifest.json di repo sudah dinaikkan.');
+      say('Nothing to pull. Make sure the version in manifest.json was bumped in the repo.');
       $('apply').disabled = false;
     }
   });

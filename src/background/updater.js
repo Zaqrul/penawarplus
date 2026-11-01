@@ -16,7 +16,7 @@
  *   1. via the native helper (git fetch + git show). Uses the user's own git
  *      credentials, so PRIVATE repositories work.
  *   2. via raw.githubusercontent.com, only when the helper is not installed and
- *      a repo is set in Tetapan. Anonymous, so PUBLIC repositories only.
+ *      a repo is set in Settings. Anonymous, so PUBLIC repositories only.
  */
 import { REPO_RE, BRANCH_RE, rawUrl } from './github.js';
 import { compareVersions } from './semver.js';
@@ -33,18 +33,18 @@ async function fetchText(url, maxBytes) {
   try {
     const res = await fetch(url, { cache: 'no-store', credentials: 'omit', signal: ctl.signal });
     if (!res.ok) {
-      const hint = res.status === 404 ? ' (nama repo/branch salah, atau repo peribadi tanpa helper git)' : '';
+      const hint = res.status === 404 ? ' (wrong repo/branch name, or a private repo without the git helper)' : '';
       throw new Error(`HTTP ${res.status}${hint}`);
     }
     const text = await res.text();
-    if (text.length > maxBytes) throw new Error('Fail terlalu besar');
+    if (text.length > maxBytes) throw new Error('File too large');
     return text;
   } finally {
     clearTimeout(timer);
   }
 }
 
-/** Explicit repo from Tetapan, or null. (With the helper, no repo setting is needed.) */
+/** Explicit repo from Settings, or null. (With the helper, no repo setting is needed.) */
 async function settingsTarget() {
   const s = await getSettings();
   if (!s.repo || !REPO_RE.test(s.repo) || !BRANCH_RE.test(s.branch) || s.branch.includes('..')) return null;
@@ -59,7 +59,7 @@ async function settingsTarget() {
 async function readRepoFile(file, maxBytes) {
   const viaGit = await nativeRequest({ cmd: 'remote-file', file }, 60_000);
   if (viaGit.ok) {
-    if (viaGit.content.length > maxBytes) throw new Error('Fail terlalu besar');
+    if (viaGit.content.length > maxBytes) throw new Error('File too large');
     return { text: viaGit.content, source: 'git' };
   }
 
@@ -100,7 +100,7 @@ export async function checkForUpdate() {
     state.remoteVersion = remote;
     state.source = source;
     state.available = cmp === 1;
-    if (cmp === null) state.error = 'Versi jauh tidak sah';
+    if (cmp === null) state.error = 'Invalid remote version';
   } catch (e) {
     state.error = String(e && e.message ? e.message : e);
   }
@@ -114,7 +114,7 @@ export async function updateRules() {
   try {
     const { text } = await readRepoFile('rules/rules.json', LIMITS.maxBytes);
     const checked = validateRules(JSON.parse(text));
-    if (!checked.ok) return { ok: false, error: 'Rule jauh tidak sah: ' + checked.errors[0] };
+    if (!checked.ok) return { ok: false, error: 'Invalid remote rules: ' + checked.errors[0] };
 
     const currentVersion = await getBaseRulesVersion();
     if (compareVersions(checked.rules.version, currentVersion) !== 1) {

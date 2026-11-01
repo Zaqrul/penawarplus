@@ -75,9 +75,21 @@
     }
   };
 
-  // 3a. size probes: report 50 instead of 0 for bait elements
+  // 3a. geometry probes. A bait hidden with display:none reads as 0 / null on
+  //     every one of these; FuckAdBlock 3.2.1 checks all seven. Report a plausible
+  //     "visible" value instead, for bait elements only.
   guard(() => {
-    for (const prop of ['offsetHeight', 'offsetWidth', 'clientHeight', 'clientWidth']) {
+    const probes = [
+      // [property, value that means "hidden", value to report instead]
+      ['offsetHeight', 0, 50],
+      ['offsetWidth', 0, 50],
+      ['clientHeight', 0, 50],
+      ['clientWidth', 0, 50],
+      ['offsetLeft', 0, 1],
+      ['offsetTop', 0, 1],
+      ['offsetParent', null, () => document.body],
+    ];
+    for (const [prop, hidden, shown] of probes) {
       for (const proto of [HTMLElement.prototype, Element.prototype]) {
         const desc = Object.getOwnPropertyDescriptor(proto, prop);
         if (!desc || !desc.get) continue;
@@ -86,7 +98,8 @@
           get: new Proxy(desc.get, {
             apply(target, thisArg, args) {
               const value = Reflect.apply(target, thisArg, args);
-              return value === 0 && isBait(thisArg) ? 50 : value;
+              if (value !== hidden || !isBait(thisArg)) return value;
+              return typeof shown === 'function' ? shown() : shown;
             },
           }),
         });

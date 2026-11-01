@@ -14,11 +14,11 @@ if (process.platform !== 'win32') {
 for (const b of BROWSERS) {
   try {
     execFileSync('reg', ['delete', `HKCU\\${b.key}\\${HOST_NAME}`, '/f'], { stdio: 'pipe' });
-    console.log(`  [dibuang] ${b.name}`);
+    console.log(`  [removed] ${b.name}`);
   } catch (_) {
-    console.log(`  [tiada] ${b.name}`);
+    console.log(`  [not found] ${b.name}`);
   }
 }
 const p = paths(path.dirname(fileURLToPath(import.meta.url)));
 for (const file of [p.launcher, p.manifest]) if (existsSync(file)) unlinkSync(file);
-console.log('Selesai.');
+console.log('Done.');

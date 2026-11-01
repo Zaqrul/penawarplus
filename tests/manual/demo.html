@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anti-adblock demo (PenawarPlus)</title>
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    #verdict { font-size: 22px; font-weight: 700; padding: 14px 16px; border-radius: 10px; margin: 16px 0; }
+    #verdict.ok { background: #dcfce7; color: #14532d; }
+    #verdict.bad { background: #fee2e2; color: #7f1d1d; }
+    ul { padding-left: 20px; } code { background: #eee; padding: 1px 5px; border-radius: 4px; }
+    /* What an adblocker's cosmetic filter does to ad-looking elements. */
+    html.simulate .pub_300x250, html.simulate .text-ad { display: none !important; }
+    #wall { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,.88); color: #fff;
+            display: none; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+    #wall.show { display: flex; }
+  </style>
+</head>
+<body>
+  <h1>Anti-adblock demo</h1>
+  <p>This page imitates how FuckAdBlock 3.2.1 detects adblock: it inserts a "bait" element and checks
+     <code>offsetParent</code>, <code>offsetHeight</code>, <code>offsetLeft</code>, <code>offsetTop</code>,
+     <code>offsetWidth</code>, <code>clientHeight</code>, <code>clientWidth</code>, plus <code>display</code>/<code>visibility</code>.</p>
+
+  <label><input type="checkbox" id="simulate"> Simulate adblock (hide the bait, like a cosmetic filter)</label>
+  <div id="verdict">…</div>
+  <button id="run">Run the check again</button>
+
+  <h2>How to test</h2>
+  <ul>
+    <li><b>Without PenawarPlus</b> (turn this site off in the popup, refresh): tick the simulation → <b>DETECTED</b> and the wall appears.</li>
+    <li><b>With PenawarPlus</b> (active): tick the simulation → it should stay <b>OK</b>.</li>
+    <li>The wall only appears if detection succeeds; it exercises <code>overlay-remover</code> when the generic defences are off.</li>
+  </ul>
+
+  <div id="wall"><div><h2>Please turn off your adblocker</h2><p>We rely on ads. Disable your ad blocker to continue.</p></div></div>
+
+  <script>
+    // Same checks as FuckAdBlock 3.2.1 _checkBait (default bait classes and style).
+    function baitIsBlocked() {
+      const bait = document.createElement('div');
+      bait.setAttribute('class', 'pub_300x250 pub_300x250m pub_728x90 text-ad textAd text_ad text_ads text-ads text-ad-links');
+      bait.setAttribute('style', 'width:1px!important;height:1px!important;position:absolute!important;left:-10000px!important;top:-1000px!important;');
+      document.body.appendChild(bait);
+      let blocked = bait.offsetParent === null || bait.offsetHeight == 0 || bait.offsetLeft == 0 ||
+        bait.offsetTop == 0 || bait.offsetWidth == 0 || bait.clientHeight == 0 || bait.clientWidth == 0;
+      const cs = getComputedStyle(bait, null);
+      if (cs && (cs.getPropertyValue('display') == 'none' || cs.getPropertyValue('visibility') == 'hidden')) blocked = true;
+      document.body.removeChild(bait);
+      return blocked;
+    }
+    function run() {
+      const blocked = baitIsBlocked();
+      const verdict = document.getElementById('verdict');
+      verdict.textContent = blocked ? 'DETECTED: adblock detected' : 'OK: adblock not detected';
+      verdict.className = blocked ? 'bad' : 'ok';
+      document.getElementById('wall').classList.toggle('show', blocked);
+      document.body.style.overflow = blocked ? 'hidden' : '';
+    }
+    document.getElementById('simulate').addEventListener('change', (e) => {
+      document.documentElement.classList.toggle('simulate', e.target.checked);
+      run();
+    });
+    document.getElementById('run').addEventListener('click', run);
+    run();
+  </script>
+</body>
+</html>

@@ -1,91 +1,91 @@
 # PenawarPlus
 
-Extension Chrome / Brave (Manifest V3) yang menjadi *penawar* kepada anti-adblock: memalsukan bait yang
-dikesan, melumpuhkan skrip pengesan, dan menyembunyikan dinding "sila matikan adblock".
-Ia **melengkapkan** adblocker sedia ada (uBlock Origin, Brave Shields); ia tidak menyekat iklan.
+A Chrome / Brave (Manifest V3) extension that acts as the *antidote* to anti-adblock: it fakes the bait
+that detectors look for, neutralises detector scripts, and hides "please disable your adblocker" walls.
+It **complements** your existing adblocker (uBlock Origin, Brave Shields); it does not block ads itself.
 
-## Pasang
+## Install
 
 ```bash
 git clone https://github.com/Zaqrul/penawarplus.git penawarplus
 ```
 
-1. Buka `chrome://extensions` (Brave: `brave://extensions`) → hidupkan **Developer mode**.
-2. **Load unpacked** → pilih folder `penawarplus`.
-3. *(Pilihan, untuk butang git pull)* `node native-host/install.js` — lihat [Kemas kini](#kemas-kini).
+1. Open `chrome://extensions` (Brave: `brave://extensions`) and turn on **Developer mode**.
+2. **Load unpacked** and pick the `penawarplus` folder.
+3. *(Optional, for the git pull button)* `node native-host/install.js`. See [Updates](#updates).
 
-Extension ID sentiasa `apdappnkjceohidhneafhcoglhffnamk` kerana `manifest.json` mengandungi `key`.
+The extension ID is always `apdappnkjceohidhneafhcoglhffnamk` because `manifest.json` contains a `key`.
 
-## Struktur
+## Structure
 
 ```
-manifest.json            ← sumber tunggal untuk nama & versi
-rules/rules.json         ← DATA rule per-site (ini yang paling kerap diubah)
+manifest.json            ← single source of truth for name & version
+rules/rules.json         ← per-site rule DATA (the file you will change most often)
 src/
-  scriptlets/            ← kod yang dijalankan dalam page; satu fail satu tugas
-    index.js             ← pendaftaran: satu-satunya senarai kod yang rule boleh panggil
-  background/            ← service worker (modul ES, tiada build step)
-    rules.js             ← format, validasi, padanan host   (tulen, diuji)
-    rules-store.js       ← bundled → remote → rule pengguna
-    updater.js           ← semak versi, tarik rule, git pull
-    injector.js          ← suntik scriptlet ikut site
-    content-scripts.js   ← daftar skrip generic (boleh dimatikan ikut site)
+  scriptlets/            ← code that runs inside the page; one file per job
+    index.js             ← registry: the only list of code a rule may call
+  background/            ← service worker (ES modules, no build step)
+    rules.js             ← format, validation, host matching   (pure, tested)
+    rules-store.js       ← bundled → remote → user rules
+    updater.js           ← version check, rule fetch, git pull
+    injector.js          ← injects scriptlets per site
+    content-scripts.js   ← registers the generic script (can be disabled per site)
     native.js, github.js, semver.js, settings.js, index.js
   content/
-    generic-main.js      ← pertahanan sentiasa-aktif (dalam konteks page, document_start)
-    overlay-remover.js   ← sembunyi dinding amaran, buka semula scroll
+    generic-main.js      ← always-on defences (page context, document_start)
+    overlay-remover.js   ← hides warning walls, restores scrolling
   popup/, options/       ← UI
-native-host/             ← helper kecil (Node) yang menjalankan `git pull`
+native-host/             ← small Node helper that runs `git pull`
 tests/                   ← `npm test`
 ```
 
-Tiada bundler, tiada `npm install` — fail dalam repo ialah fail yang dimuatkan browser.
+There is no bundler and no `npm install`: the files in the repo are the files the browser loads.
 
-## Kemas kini
+## Updates
 
-Ada **dua saluran**, kerana Manifest V3 melarang kod jauh dan extension tidak boleh mengubah failnya sendiri:
+There are **two channels**, because Manifest V3 forbids remote code and an extension cannot modify its own files:
 
-| Saluran | Apa | Perlu apa | Bila |
+| Channel | What | Needs | When |
 |---|---|---|---|
-| **Rule** (data) | `rules/rules.json` dibaca dari repo, disahkan, disimpan | Helper git (repo private) atau rangkaian sahaja (repo awam) | Automatik (~6 jam) atau butang *Kemas kini rule* |
-| **Kod** (extension) | `git pull --ff-only` dalam folder extension, kemudian reload | Helper native (sekali pasang) | **Hanya bila anda tekan** *Kemas kini sekarang* |
+| **Rules** (data) | `rules/rules.json` is read from the repo, validated and stored | Git helper (private repo) or just a network connection (public repo) | Automatically (~6 h) or via the *Update rules* button |
+| **Code** (extension) | `git pull --ff-only` in the extension folder, then a reload | Native helper (installed once) | **Only when you press** *Update now* |
 
-Aliran butang: popup → **Semak kemas kini** membandingkan `version` dalam `manifest.json` tempatan dengan
-yang di branch repo → jika lebih baharu, butang **Kemas kini sekarang** muncul → helper menjalankan
-`git pull --ff-only` → extension reload sendiri. Lencana `↑` pada ikon menandakan versi baharu tersedia.
+Button flow: popup → **Check for updates** compares the `version` in the local `manifest.json` with the one on
+the repo branch → if it is newer, the **Update now** button appears → the helper runs
+`git pull --ff-only` → the extension reloads itself. A `↑` badge on the icon means a new version is available.
 
-### Pasang helper git (sekali, Windows)
+### Install the git helper (once, Windows)
 
-Perlu Node.js dan git dalam PATH.
+Requires Node.js and git on your PATH.
 
 ```bash
-node native-host/install.js      # daftar untuk Chrome, Brave, Edge (pengguna semasa, tanpa admin)
-node native-host/uninstall.js    # buang
+node native-host/install.js      # registers for Chrome, Brave, Edge (current user, no admin)
+node native-host/uninstall.js    # removes it
 ```
 
-Kemudian reload extension. *Tetapan* akan memaparkan "Dipasang". Helper:
-- hanya faham `ping`, `info`, `pull`, `remote-file` (fail dalam senarai tetap sahaja); tiada arahan atau path sewenang-wenang;
-- menjalankan `git -C <folder extension> ...` tanpa shell, `--ff-only` (tidak pernah merge atau menimpa kerja tempatan);
-- hanya boleh dipanggil oleh extension ID di atas (`allowed_origins`).
+Then reload the extension. *Settings* will show "Installed". The helper:
+- only understands `ping`, `info`, `pull` and `remote-file` (files from a fixed list only); no arbitrary commands or paths;
+- runs `git -C <extension folder> ...` without a shell and with `--ff-only` (it never merges or overwrites local work);
+- can only be called by the extension ID above (`allowed_origins`).
 
-macOS/Linux: pemasang belum ditulis; daftarkan `native-host/host.js` secara manual mengikut dokumentasi Chrome.
+macOS/Linux: the installer is not written yet; register `native-host/host.js` manually following the Chrome documentation.
 
-### Repo private atau awam?
+### Private or public repo?
 
-| | Helper git dipasang | Tanpa helper |
+| | Git helper installed | No helper |
 |---|---|---|
-| Semak versi & tarik rule | `git fetch` + baca `origin` (guna credential git anda) | `raw.githubusercontent.com`, tanpa login |
-| Repo **private** | berfungsi | **tidak berfungsi** (404) |
-| Repo **awam** | berfungsi | berfungsi (isi `owner/nama` dalam *Tetapan*) |
-| Butang *Kemas kini sekarang* | berfungsi | tiada |
+| Version check & rule fetch | `git fetch` + read `origin` (uses your git credentials) | `raw.githubusercontent.com`, no login |
+| **Private** repo | works | **does not work** (404) |
+| **Public** repo | works | works (enter `owner/name` in *Settings*) |
+| *Update now* button | works | not available |
 
-Dengan helper, tiada tetapan repo diperlukan: ia menggunakan `origin` bagi folder extension.
-Semakan hanya membaca (`git fetch`); fail anda tidak berubah sehingga anda tekan *Kemas kini sekarang*.
-Helper hanya boleh membaca `manifest.json` dan `rules/rules.json` (senarai tetap).
+With the helper, no repo setting is needed: it uses the `origin` of the extension folder.
+The check is read-only (`git fetch`); your files do not change until you press *Update now*.
+The helper can only read `manifest.json` and `rules/rules.json` (fixed list).
 
-## Menambah rule untuk site yang degil
+## Adding rules for stubborn sites
 
-Edit `rules/rules.json` (atau tampal ke *Tetapan → Rule sendiri* untuk ujian tanpa commit):
+Edit `rules/rules.json` (or paste into *Settings → Your own rules* to try something without committing):
 
 ```json
 {
@@ -93,7 +93,7 @@ Edit `rules/rules.json` (atau tampal ke *Tetapan → Rule sendiri* untuk ujian t
   "version": "2026.11.02",
   "sites": [
     {
-      "hosts": ["contoh.example"],
+      "hosts": ["example.test"],
       "scriptlets": [
         ["set-constant", "adBlockDetected", "false"],
         ["no-fetch-if", "adsbygoogle"],
@@ -101,53 +101,53 @@ Edit `rules/rules.json` (atau tampal ke *Tetapan → Rule sendiri* untuk ujian t
       ],
       "remove": [".adblock-modal"],
       "unlock": true,
-      "note": "kenapa rule ini wujud"
+      "note": "why this rule exists"
     }
   ]
 }
 ```
 
-- `hosts`: domain + semua subdomain; `"*"` = semua site.
-- `scriptlets`: `["nama", arg…]`, semua arg ialah string.
-- `remove`: selector CSS yang disembunyikan. `unlock`: pulihkan scroll.
-- **Naikkan `version`** supaya pengguna lain menerima kemas kini rule.
+- `hosts`: a domain plus all its subdomains; `"*"` = every site.
+- `scriptlets`: `["name", arg…]`; every arg is a string.
+- `remove`: CSS selectors to hide. `unlock`: restore scrolling.
+- **Bump `version`** so other users receive the rule update.
 
-| Scriptlet | Args | Kesan |
+| Scriptlet | Args | Effect |
 |---|---|---|
-| `set-constant` | `rantai`, `nilai` | `window.rantai` sentiasa bernilai itu. Nilai: `true false null undefined noopFunc trueFunc falseFunc emptyObj emptyArr`, nombor, atau `""` |
-| `abort-on-property-read` | `rantai` | Skrip yang *membaca* property itu berhenti (ReferenceError) |
-| `abort-on-property-write` | `rantai` | Skrip yang *menulis* property itu berhenti |
-| `no-fetch-if` | `teks` atau `/regex/` | `fetch()` ke URL itu dijawab 200 kosong |
-| `prevent-setTimeout` / `prevent-setInterval` | `teks atau /regex/`, `delay` (pilihan) | Callback yang sepadan dijadikan no-op |
-| `spoof-css` | `selector`, `prop`, `nilai`, … | `getComputedStyle` melaporkan nilai palsu untuk elemen itu |
+| `set-constant` | `chain`, `value` | `window.<chain>` always has that value. Values: `true false null undefined noopFunc trueFunc falseFunc emptyObj emptyArr`, a number, or `""` |
+| `abort-on-property-read` | `chain` | A script that *reads* that property is stopped (ReferenceError) |
+| `abort-on-property-write` | `chain` | A script that *writes* that property is stopped |
+| `no-fetch-if` | `text` or `/regex/` | `fetch()` to a matching URL gets an empty 200 response |
+| `prevent-setTimeout` / `prevent-setInterval` | `text or /regex/`, `delay` (optional) | Matching callbacks become no-ops |
+| `spoof-css` | `selector`, `prop`, `value`, … | `getComputedStyle` reports a fake value for those elements |
 
-Rule hanya boleh memilih dari senarai ini. Rule jauh yang tidak sah ditolak **sepenuhnya** (tidak separa-guna).
+Rules can only choose from this list. An invalid remote rule set is rejected **entirely** (never partially applied).
 
-### Menambah scriptlet baharu
+### Adding a new scriptlet
 
-1. Tulis fungsi **self-contained** dalam `src/scriptlets/` (ia diserialisasi — tidak boleh merujuk apa-apa di luar badannya).
-2. Daftar dalam `src/scriptlets/index.js` (`fn`, `minArgs`, `args`).
-3. Tambah sampel dalam `tests/scriptlets.test.js` — ujian gagal jika anda lupa, dan ia menjalankan fungsi dalam sandbox untuk memastikan ia benar-benar self-contained.
+1. Write a **self-contained** function in `src/scriptlets/` (it is serialised, so it cannot reference anything outside its own body).
+2. Register it in `src/scriptlets/index.js` (`fn`, `minArgs`, `args`).
+3. Add a sample in `tests/scriptlets.test.js`. The test fails if you forget, and it runs the function in a sandbox to prove it really is self-contained.
 
 ## Release checklist
 
-1. Ubah kod/rule; `npm test` mesti lulus.
-2. Naikkan `version` dalam **`manifest.json`** (dan `package.json`). Tanpa ini, pengguna tidak akan nampak butang kemas kini.
-3. Jika rule berubah, naikkan `version` dalam `rules/rules.json`.
+1. Change code/rules; `npm test` must pass.
+2. Bump `version` in **`manifest.json`** (and `package.json`). Without this, users will not see the update button.
+3. If rules changed, bump `version` in `rules/rules.json`.
 4. `git commit` → `git push`.
 
-## Had yang perlu diketahui
+## Known limits
 
-- **Tidak diuji dalam browser sebenar lagi.** Diuji: logik rule/scriptlet/host/`git pull`/`remote-file` (`npm test`, 29 ujian) dan `generic-main.js` dalam jsdom. Belum diuji: pemuatan extension, popup/options, `webNavigation` + `executeScript`, native messaging dalam Chrome/Brave sebenar.
-- **Perlumbaan masa:** scriptlet per-site disuntik melalui `webNavigation.onCommitted`; ia sangat awal tetapi boleh kalah kepada skrip inline pertama sesetengah site. `generic-main.js` tidak ada masalah ini.
-- **Skrip detector yang diisytiharkan sebagai `function FuckAdBlock(){}` global** boleh menimpa objek palsu; site begitu perlukan rule khusus.
-- Site yang mengesan di sisi server, atau dengan kod unik, tidak akan lepas dengan pertahanan generic.
-- Pertahanan generic sentiasa aktif kecuali anda matikan site itu di popup; ia tidak boleh dikecualikan di bawah tahap domain.
-- Tiada rule untuk site sebenar disertakan: `rules/rules.json` bermula kosong sehingga ia diuji pada site yang berkenaan.
+- **Not yet tested in a real browser.** Tested: rule/scriptlet/host/`git pull`/`remote-file` logic (`npm test`, 29 tests) and `generic-main.js` in jsdom. Not yet tested: loading the extension, popup/options, `webNavigation` + `executeScript`, and native messaging in a real Chrome/Brave.
+- **Timing race:** per-site scriptlets are injected through `webNavigation.onCommitted`; that is very early but can lose to some sites' first inline script. `generic-main.js` does not have this problem.
+- **Detector scripts that declare a global `function FuckAdBlock(){}`** can overwrite the fake object; such sites need a dedicated rule.
+- Sites that detect on the server side, or with unique code, will not be beaten by the generic defences.
+- The generic defences are always on unless you disable the site in the popup; they cannot be excluded below domain level.
+- No rules for real sites are included: `rules/rules.json` starts empty until rules have been tested on the sites concerned.
 
-## Kredit & lesen
+## Credits & licence
 
-Teknik dikaji daripada dokumentasi dan kod terbuka [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Resources-Library),
-[AdGuard Scriptlets](https://github.com/AdguardTeam/Scriptlets) dan [EasyList Adblock Warning Removal List](https://github.com/easylist/antiadblockfilters).
-Semua kod di sini ditulis semula secara bebas — **tiada kod GPL disalin**. Jika anda kelak menyalin kod atau rule daripada
-projek GPL-3.0 (contohnya rule dari uAssets), projek ini mesti dilesenkan GPL-3.0 juga dan atribusi disertakan.
+Techniques were studied from the documentation and open code of [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Resources-Library),
+[AdGuard Scriptlets](https://github.com/AdguardTeam/Scriptlets) and the [EasyList Adblock Warning Removal List](https://github.com/easylist/antiadblockfilters).
+All code here was rewritten independently, so **no GPL code was copied**. If you later copy code or rules from a
+GPL-3.0 project (for example rules from uAssets), this project must also be licensed GPL-3.0 and attribution included.

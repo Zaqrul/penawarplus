@@ -63,12 +63,12 @@ function main() {
       execFileSync('reg', ['add', `HKCU\\${b.key}\\${HOST_NAME}`, '/ve', '/t', 'REG_SZ', '/d', p.manifest, '/f'], { stdio: 'pipe' });
       console.log(`  [ok] ${b.name}`);
     } catch (e) {
-      console.log(`  [gagal] ${b.name}: ${String(e.message).split('\n')[0]}`);
+      console.log(`  [failed] ${b.name}: ${String(e.message).split('\n')[0]}`);
     }
   }
   console.log(`\nExtension ID : ${extensionId}`);
   console.log(`Launcher     : ${p.launcher}`);
-  console.log('Siap. Reload extension di chrome://extensions, kemudian buka popup PenawarPlus.');
+  console.log('Done. Reload the extension at chrome://extensions, then open the PenawarPlus popup.');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

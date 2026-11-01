@@ -1,42 +1,42 @@
 <!doctype html>
-<html lang="ms">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tetapan PenawarPlus</title>
+  <title>PenawarPlus Settings</title>
   <link rel="stylesheet" href="../ui.css">
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
   <main>
-    <h1>Tetapan PenawarPlus</h1>
+    <h1>PenawarPlus Settings</h1>
 
     <section>
-      <h2>Sumber kemas kini</h2>
-      <p class="muted small">Dengan helper git dipasang, repo dibaca melalui git (repo <strong>private</strong> pun berfungsi) dan medan di bawah tidak diperlukan. Tanpa helper, isi repo <strong>awam</strong> sebagai gantian.</p>
-      <label for="repo">Repo GitHub awam (owner/nama), untuk mod tanpa helper</label>
-      <input type="text" id="repo" placeholder="kosongkan jika guna helper git" autocomplete="off" spellcheck="false">
+      <h2>Update source</h2>
+      <p class="muted small">With the git helper installed, the repository is read through git (<strong>private</strong> repos work too) and the fields below are not needed. Without the helper, enter a <strong>public</strong> repository instead.</p>
+      <label for="repo">Public GitHub repo (owner/name), for use without the helper</label>
+      <input type="text" id="repo" placeholder="leave empty if you use the git helper" autocomplete="off" spellcheck="false">
       <label for="branch">Branch</label>
       <input type="text" id="branch" autocomplete="off" spellcheck="false">
-      <label class="check"><input type="checkbox" id="autoCheck"> Semak versi baharu secara berkala (setiap ~6 jam)</label>
-      <label class="check"><input type="checkbox" id="autoRules"> Kemas kini rule secara automatik</label>
-      <p class="muted small">Kod extension tidak pernah dikemas kini sendiri. Anda perlu tekan butang <em>Kemas kini sekarang</em> di popup.</p>
-      <div class="row"><button id="save-settings" class="primary">Simpan</button><span id="settings-msg" class="small" role="status"></span></div>
+      <label class="check"><input type="checkbox" id="autoCheck"> Check for new versions periodically (about every 6 hours)</label>
+      <label class="check"><input type="checkbox" id="autoRules"> Update rules automatically</label>
+      <p class="muted small">The extension's code is never updated on its own. You have to press <em>Update now</em> in the popup.</p>
+      <div class="row"><button id="save-settings" class="primary">Save</button><span id="settings-msg" class="small" role="status"></span></div>
     </section>
 
     <section>
-      <h2>Helper git (native)</h2>
-      <p id="native-status">Memeriksa…</p>
-      <p class="muted small">Dipasang sekali dengan <code>node native-host/install.js</code>. Tanpa helper, semakan versi dan kemas kini rule masih berfungsi; hanya butang <em>git pull</em> yang tidak.</p>
+      <h2>Git helper (native)</h2>
+      <p id="native-status">Checking…</p>
+      <p class="muted small">Installed once with <code>node native-host/install.js</code>. Without the helper, version checks and rule updates still work for public repos; only the <em>git pull</em> button does not.</p>
     </section>
 
     <section>
-      <h2>Rule sendiri</h2>
-      <p class="muted small">JSON dalam format yang sama seperti <code>rules/rules.json</code>. Digabung dengan rule asas dan tidak ditimpa oleh kemas kini.</p>
-      <textarea id="userRules" spellcheck="false" aria-label="Rule sendiri (JSON)"></textarea>
+      <h2>Your own rules</h2>
+      <p class="muted small">JSON in the same format as <code>rules/rules.json</code>. It is merged with the base rules and is not overwritten by updates.</p>
+      <textarea id="userRules" spellcheck="false" aria-label="Your own rules (JSON)"></textarea>
       <div class="row">
-        <button id="save-rules" class="primary">Sahkan &amp; simpan</button>
-        <button id="example-rules">Masukkan contoh</button>
+        <button id="save-rules" class="primary">Validate &amp; save</button>
+        <button id="example-rules">Insert example</button>
       </div>
       <pre id="rules-msg" class="small" role="status"></pre>
     </section>
