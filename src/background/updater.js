@@ -134,8 +134,20 @@ export async function applyCodeUpdate() {
   const result = await nativeRequest({ cmd: 'pull' });
   if (!result.ok) return result;
 
-  await setLocal({ lastUpdate: { at: Date.now(), from, changed: !!result.changed, output: String(result.output || '').slice(0, 2000) } });
-  if (result.changed) {
+  // The files on disk may already be newer than the running extension (pulled by hand,
+  // or the browser was never reloaded). Then there is nothing to pull but a reload is due.
+  let stale = false;
+  if (!result.changed) {
+    try {
+      const disk = await (await fetch(chrome.runtime.getURL('manifest.json'), { cache: 'no-store' })).json();
+      stale = typeof disk.version === 'string' && disk.version !== from;
+    } catch (_) { /* cannot read own manifest: fall back to "nothing to pull" */ }
+  }
+  const reload = !!result.changed || stale;
+  if (stale) result.changed = true;
+
+  await setLocal({ lastUpdate: { at: Date.now(), from, changed: reload, output: String(result.output || '').slice(0, 2000) } });
+  if (reload) {
     // Reply to the popup first, then reload (reload kills this worker).
     setTimeout(() => chrome.runtime.reload(), 600);
   }

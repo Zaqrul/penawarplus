@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PenawarPlus",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "The antidote to anti-adblock: defeats adblock detection and removes warning walls. Works alongside your existing adblocker.",
   "minimum_chrome_version": "111",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAimxt8zLxg1biSBt7P6ARwrl5+s5alyF2U3njcmHTPMrhEjAD2Jg/PF0EnjPhjV4pSe5yVY53wdOmgYJkfq4/QcwXjPpSmD7KukZaQFUkBOyqCD0gT2eN4BkPRhPnqEZ5Essny/I9VdmEVVeSP6XWuUOUxpUXWOVE/bgcLHFCuevBw/8iaKVmMclSHvk4BLDOlSexXAsaPbVzC4mu3+4cxzNzvcrQijItsm7qNvCCwvUtGHc16pWnU2JgVUu+sCAjyUw31rmmQ/z76QvYzXyejqrngSx4fLXHBzP/uMOA5slZfI4W9JoAYMX6MS2Dmp9Ch+VDJjJL9rCmFHcUQmEpjQIDAQAB",
