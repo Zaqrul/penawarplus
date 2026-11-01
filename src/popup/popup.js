@@ -20,6 +20,8 @@ function describeError(res) {
       return 'The extension folder is not a git repository. Clone the repo with git, then "Load unpacked" that folder.';
     case 'no-remote':
       return 'The git repository has no "origin" remote.';
+    case 'untrusted-remote':
+      return 'Refused: the "origin" remote (' + (res.remote || '?') + ') is not a trusted PenawarPlus repository. Forks must opt in with PENAWARPLUS_TRUSTED_REMOTES.';
     case 'detached-head':
       return 'The repository is in a detached HEAD state. Check out a branch first.';
     case 'git-failed':

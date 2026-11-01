@@ -10,6 +10,10 @@
  *   {cmd:"pull"}                 -> {ok, before, after, changed, output}   (git pull --ff-only)
  *   {cmd:"remote-file", file}    -> {ok, content}   file must be in READABLE_FILES
  *
+ * Supply-chain guard: pull and remote-file refuse to run unless the folder's
+ * "origin" is a trusted repository (see TRUSTED_REMOTES), so a changed remote
+ * can never make the helper fetch and install someone else's code.
+ *
  * It only ever runs `git -C <extension folder> ...` with fixed arguments (never
  * through a shell) and the browser only lets the extension whose ID is listed
  * in allowed_origins talk to it.
@@ -30,6 +34,26 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_ROOT = process.env.PENAWARPLUS_ROOT
   ? path.resolve(process.env.PENAWARPLUS_ROOT)
   : path.resolve(HERE, '..');
+
+/**
+ * Repositories whose code the helper may pull. Forks add theirs through the
+ * PENAWARPLUS_TRUSTED_REMOTES environment variable (comma-separated "owner/name"
+ * or exact remote URLs).
+ */
+export const TRUSTED_REMOTES = Object.freeze(['Zaqrul/penawarplus']);
+
+/** "owner/name" for a github.com remote URL (https, ssh or scp-style), else null. */
+export function githubSlug(url) {
+  const m = /^(?:https:\/\/(?:[^@/]+@)?github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(String(url || '').trim());
+  return m ? m[1].toLowerCase() : null;
+}
+
+export function isTrustedRemote(url) {
+  const extra = (process.env.PENAWARPLUS_TRUSTED_REMOTES || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const slug = githubSlug(url);
+  const trusted = [...TRUSTED_REMOTES, ...extra];
+  return trusted.some((t) => t === url || (slug !== null && t.toLowerCase() === slug));
+}
 
 export function git(root, args, timeoutMs = 60_000) {
   return new Promise((resolve) => {
@@ -75,8 +99,9 @@ export async function pull(root = DEFAULT_ROOT) {
   if (!before.ok) return before;
   if (before.branch === 'HEAD') return { ok: false, error: 'detached-head', root };
   if (!before.remote) return { ok: false, error: 'no-remote', root };
+  if (!isTrustedRemote(before.remote)) return { ok: false, error: 'untrusted-remote', remote: before.remote };
 
-  const result = await git(root, ['pull', '--ff-only']);
+  const result = await git(root, ['pull', '--ff-only', '--no-recurse-submodules']);
   const after = await info(root);
   const output = [result.stdout, result.stderr].filter(Boolean).join('\n');
   return {
@@ -103,6 +128,7 @@ export async function remoteFile(file, root = DEFAULT_ROOT) {
   if (!here.ok) return here;
   if (here.branch === 'HEAD') return { ok: false, error: 'detached-head', root };
   if (!here.remote) return { ok: false, error: 'no-remote', root };
+  if (!isTrustedRemote(here.remote)) return { ok: false, error: 'untrusted-remote', remote: here.remote };
 
   const fetched = await git(root, ['fetch', '--quiet', 'origin'], 45_000);
   if (!fetched.ok) return { ok: false, error: 'git-failed', output: fetched.stderr };

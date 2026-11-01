@@ -129,6 +129,13 @@ Rules can only choose from this list. An invalid remote rule set is rejected **e
 2. Register it in `src/scriptlets/index.js` (`fn`, `minArgs`, `args`).
 3. Add a sample in `tests/scriptlets.test.js`. The test fails if you forget, and it runs the function in a sandbox to prove it really is self-contained.
 
+## Security
+
+The repository is the update source, so it is treated as the thing to protect. See [SECURITY.md](SECURITY.md) for the full model. In short:
+rules are validated data (never code); `npm test` fails on dynamic code, remote scripts, unexpected hosts or extra permissions;
+code updates only happen when you press *Update now*; and the git helper refuses to pull unless `origin` is `Zaqrul/penawarplus`
+(forks opt in with `PENAWARPLUS_TRUSTED_REMOTES=owner/name`).
+
 ## Release checklist
 
 1. Change code/rules; `npm test` must pass.
@@ -138,14 +145,18 @@ Rules can only choose from this list. An invalid remote rule set is rejected **e
 
 ## Known limits
 
-- **Not yet tested in a real browser.** Tested: rule/scriptlet/host/`git pull`/`remote-file` logic (`npm test`, 29 tests) and `generic-main.js` in jsdom. Not yet tested: loading the extension, popup/options, `webNavigation` + `executeScript`, and native messaging in a real Chrome/Brave.
+- **Not yet tested in a real browser.** Tested: rule/scriptlet/host/`git pull`/`remote-file` logic (`npm test`, 36 tests) and `generic-main.js` in jsdom. Not yet tested: loading the extension, popup/options, `webNavigation` + `executeScript`, and native messaging in a real Chrome/Brave.
 - **Timing race:** per-site scriptlets are injected through `webNavigation.onCommitted`; that is very early but can lose to some sites' first inline script. `generic-main.js` does not have this problem.
 - **Detector scripts that declare a global `function FuckAdBlock(){}`** can overwrite the fake object; such sites need a dedicated rule.
 - Sites that detect on the server side, or with unique code, will not be beaten by the generic defences.
 - The generic defences are always on unless you disable the site in the popup; they cannot be excluded below domain level.
 - No rules for real sites are included: `rules/rules.json` starts empty until rules have been tested on the sites concerned.
 
-## Credits & licence
+## Licence
+
+MIT, see [LICENSE](LICENSE). Bundled fonts (Poppins, Lora) are under the SIL Open Font License 1.1, see `fonts/`.
+
+## Credits
 
 Techniques were studied from the documentation and open code of [uBlock Origin](https://github.com/gorhill/uBlock/wiki/Resources-Library),
 [AdGuard Scriptlets](https://github.com/AdguardTeam/Scriptlets) and the [EasyList Adblock Warning Removal List](https://github.com/easylist/antiadblockfilters).

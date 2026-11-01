@@ -1,6 +1,6 @@
 {
   "name": "penawarplus",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "description": "PenawarPlus - browser extension (Chrome/Brave, MV3)",
@@ -9,5 +9,10 @@
     "icons": "node tools/make-icons.js",
     "install-host": "node native-host/install.js",
     "uninstall-host": "node native-host/uninstall.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zaqrul/penawarplus.git"
   }
 }

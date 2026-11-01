@@ -5,7 +5,7 @@ import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handle, encodeMessage, createDecoder } from '../native-host/host.js';
+import { handle, encodeMessage, createDecoder, githubSlug, isTrustedRemote } from '../native-host/host.js';
 import { computeExtensionId, buildHostManifest } from '../native-host/install.js';
 
 const HOST = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'native-host', 'host.js');
@@ -28,7 +28,8 @@ function makeRepos() {
   git(owner, 'commit', '-m', 'v0.1.0');
   git(owner, 'push', 'origin', 'HEAD:main');
   git(dir, 'clone', remote, user);
-  return { dir, owner, user, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  process.env.PENAWARPLUS_TRUSTED_REMOTES = remote; // the local bare repo stands in for the trusted GitHub repo
+  return { dir, owner, user, cleanup: () => { delete process.env.PENAWARPLUS_TRUSTED_REMOTES; rmSync(dir, { recursive: true, force: true }); } };
 }
 
 test('protocol: encode/decode round-trips, including split chunks and two messages', () => {
@@ -196,4 +197,40 @@ test('install: extension ID derivation matches the manifest key; host manifest i
   const hostManifest = buildHostManifest({ launcherPath: 'C:\\x\\host.bat', extensionId: id });
   assert.deepEqual(hostManifest.allowed_origins, [`chrome-extension://${id}/`]);
   assert.equal(hostManifest.type, 'stdio');
+});
+
+test('trust: only the official repo (any github URL form) is trusted by default', () => {
+  delete process.env.PENAWARPLUS_TRUSTED_REMOTES;
+  for (const url of [
+    'https://github.com/Zaqrul/penawarplus.git',
+    'https://github.com/zaqrul/penawarplus',
+    'https://user@github.com/Zaqrul/penawarplus.git',
+    'git@github.com:Zaqrul/penawarplus.git',
+    'ssh://git@github.com/Zaqrul/penawarplus.git',
+  ]) assert.equal(isTrustedRemote(url), true, url);
+  for (const url of [
+    'https://github.com/evil/penawarplus.git',
+    'https://github.com.evil.example/Zaqrul/penawarplus.git',
+    'https://evil.example/github.com/Zaqrul/penawarplus',
+    'https://github.com/Zaqrul/penawarplus-fork',
+    'ext::sh -c "touch /tmp/pwn"',
+    '/some/local/path', '', null,
+  ]) assert.equal(isTrustedRemote(url), false, String(url));
+  assert.equal(githubSlug('git@github.com:A/b.git'), 'a/b');
+});
+
+test('trust: pull and remote-file refuse an untrusted origin and change nothing', async () => {
+  const r = makeRepos();
+  try {
+    delete process.env.PENAWARPLUS_TRUSTED_REMOTES; // now the local remote is NOT trusted
+    writeFileSync(path.join(r.owner, 'manifest.json'), '{"version":"9.9.9"}\n');
+    git(r.owner, 'commit', '-am', 'malicious');
+    git(r.owner, 'push', 'origin', 'HEAD:main');
+    const head = git(r.user, 'rev-parse', 'HEAD');
+    assert.equal((await handle({ cmd: 'pull' }, r.user)).error, 'untrusted-remote');
+    assert.equal((await handle({ cmd: 'remote-file', file: 'manifest.json' }, r.user)).error, 'untrusted-remote');
+    assert.equal(git(r.user, 'rev-parse', 'HEAD'), head);
+  } finally {
+    r.cleanup();
+  }
 });
